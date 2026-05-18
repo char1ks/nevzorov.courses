@@ -1,17 +1,15 @@
+import os
+
 DB_NAME = "testdb"
 DB_USER = "test"
 DB_PASSWORD = "test"
-DB_HOST = "localhost"
-DB_PORT = 6432
+DB_HOST = os.getenv("DB_HOST", "localhost")
+DB_PORT = int(os.getenv("DB_PORT", 6432))
 DB_BATCH = 10000
-
 import psycopg2
 import random
 import time
-import os
-
 # Wait for DB to be ready (simple, not production-safe)
-import socket
 import time as t
 
 
