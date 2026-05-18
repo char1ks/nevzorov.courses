@@ -2,13 +2,28 @@ from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
 import time
 
+ES_URL = "http://localhost:9200"
+
 es = Elasticsearch(
-    "http://localhost:9200",
+    ES_URL,
     headers={
         "Accept": "application/vnd.elasticsearch+json; compatible-with=8",
         "Content-Type": "application/vnd.elasticsearch+json; compatible-with=8"
     }
 )
+
+# Wait for Elasticsearch to be ready
+print("Waiting for Elasticsearch...")
+for _ in range(60):
+    try:
+        es.cluster.health()
+        print("Elasticsearch is ready")
+        break
+    except Exception:
+        time.sleep(2)
+else:
+    raise RuntimeError(f"Elasticsearch at {ES_URL} did not become ready in time")
+
 INDEX = "test_texts"
 
 # Delete if exists
