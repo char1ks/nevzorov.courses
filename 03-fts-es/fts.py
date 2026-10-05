@@ -21,58 +21,77 @@ for i in range(max_retries):
             time.sleep(2)
         else:
             raise
+
 INDEX = "test_texts"
 
+# Retry operations until ES is fully ready
+def retry_es_operation(operation, max_retries=30):
+    for i in range(max_retries):
+        try:
+            return operation()
+        except Exception as e:
+            if i < max_retries - 1:
+                print(f"Retrying ES operation... ({i+1}/{max_retries})")
+                time.sleep(2)
+            else:
+                raise
+
 # Delete if exists
-if es.indices.exists(index=INDEX):
-    es.indices.delete(index=INDEX)
+def delete_index():
+    if es.indices.exists(index=INDEX):
+        es.indices.delete(index=INDEX)
+
+retry_es_operation(delete_index)
 
 # Create with synonym filter
-es.indices.create(
-    index=INDEX,
-    body={
-        "settings": {
-            "analysis": {
-                "filter": {
-                    "cat_synonyms": {
-                        "type": "synonym",
-                        "synonyms": [
-                            "cat, kitten",
-                            "wine, water"
-                        ]
+def create_index():
+    es.indices.create(
+        index=INDEX,
+        body={
+            "settings": {
+                "analysis": {
+                    "filter": {
+                        "cat_synonyms": {
+                            "type": "synonym",
+                            "synonyms": [
+                                "cat, kitten",
+                                "wine, water"
+                            ]
+                        },
+                        "english_stemmer": {
+                            "type": "stemmer",
+                            "language": "english"
+                        }
                     },
-                    "english_stemmer": {
-                        "type": "stemmer",
-                        "language": "english"
-                    }
-                },
-                "analyzer": {
-                    "cat_english": {
-                        "tokenizer": "standard",
-                        "filter": [
-                            "lowercase",
-                            "cat_synonyms",
-                            "english_stemmer"
-                        ]
-                    },
-                    "default": {
-                        "tokenizer": "standard",
-                        "filter": [
-                            "lowercase",
-                            "cat_synonyms",
-                            "english_stemmer"
-                        ]
+                    "analyzer": {
+                        "cat_english": {
+                            "tokenizer": "standard",
+                            "filter": [
+                                "lowercase",
+                                "cat_synonyms",
+                                "english_stemmer"
+                            ]
+                        },
+                        "default": {
+                            "tokenizer": "standard",
+                            "filter": [
+                                "lowercase",
+                                "cat_synonyms",
+                                "english_stemmer"
+                            ]
+                        }
                     }
                 }
-            }
-        },
-        "mappings": {
-            "properties": {
-                "text": {"type": "text", "analyzer": "cat_english"}
+            },
+            "mappings": {
+                "properties": {
+                    "text": {"type": "text", "analyzer": "cat_english"}
+                }
             }
         }
-    }
-)
+    )
+
+retry_es_operation(create_index)
 
 docs = [
     {"_index": INDEX, "_id": 1, "text": "The cat sat on the mat."},
@@ -88,7 +107,11 @@ docs = [
     {"_index": INDEX, "_id": 11, "text": "Wine."},
     {"_index": INDEX, "_id": 12, "text": "Water."},
 ]
-bulk(es, docs)
+
+def bulk_insert():
+    bulk(es, docs)
+
+retry_es_operation(bulk_insert)
 time.sleep(1)
 
 def search_and_print(query):
@@ -105,6 +128,6 @@ def search_and_print(query):
         print(f"Score: {hit['_score']:.2f} | Text: {hit['_source']['text']}")
 
 # Remove previous direct search/print blocks
-search_and_print("cat")
-search_and_print("kitten")
-search_and_print("wine") 
+retry_es_operation(lambda: search_and_print("cat"))
+retry_es_operation(lambda: search_and_print("kitten"))
+retry_es_operation(lambda: search_and_print("wine")) 
