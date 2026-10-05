@@ -1,10 +1,11 @@
 services:
+
   postgresql-master:
     image: docker.io/bitnami/postgresql:latest
     ports:
-      - '5432:5432'
+      - "5432:5432"
     volumes:
-      - 'postgresql_master_data:/bitnami/postgresql'
+      - "postgresql_master_data:/bitnami/postgresql"
     environment:
       - POSTGRESQL_REPLICATION_MODE=master
       - POSTGRESQL_REPLICATION_USER=repl_user
@@ -12,52 +13,34 @@ services:
       - POSTGRESQL_USERNAME=postgres
       - POSTGRESQL_PASSWORD=mysecretpassword
       - POSTGRESQL_DATABASE=my_database
-      - ALLOW_EMPTY_PASSWORD=yes
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d my_database"]
       interval: 2s
       timeout: 2s
       retries: 30
-    networks:
-      - postgres-network
 
   postgresql-slave:
     image: docker.io/bitnami/postgresql:latest
     ports:
-      - '5433:5432'
+      - "5433:5432"
     depends_on:
-      - postgresql-master
+      postgresql-master:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       - POSTGRESQL_REPLICATION_MODE=slave
       - POSTGRESQL_REPLICATION_USER=repl_user
       - POSTGRESQL_REPLICATION_PASSWORD=repl_password
-      - POSTGRESQL_MASTER_HOST=postgresql-master
-      - POSTGRESQL_PASSWORD=mysecretpassword
+      - POSTGRESQL_MASTER_HOST=host.docker.internal
       - POSTGRESQL_MASTER_PORT_NUMBER=5432
-      - ALLOW_EMPTY_PASSWORD=yes
+      - POSTGRESQL_PASSWORD=mysecretpassword
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d my_database"]
       interval: 2s
       timeout: 2s
       retries: 30
-    networks:
-      - postgres-network
-
-networks:
-  postgres-network:
-    driver: bridge
 
 volumes:
   postgresql_master_data:
     driver: local
-
-# pip install pgcli
-# alias psql=pgcli
-
-# PGPASSWORD= psql -h 127.0.0.1 -p 5432 -U postgres -d my_database
-# SELECT pg_is_in_recovery(); 
-# SELECT pid, client_addr, state, sync_state, sent_lsn, write_lsn, flush_lsn, replay_lsn FROM pg_stat_replication;
-
-# PGPASSWORD= psql -h 127.0.0.1 -p 5433 -U postgres -d my_database
-# SELECT pg_is_in_recovery(); 
-# SELECT pg_last_wal_receive_lsn(), pg_last_wal_replay_lsn(), pg_last_xact_replay_timestamp();
