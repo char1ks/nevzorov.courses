@@ -2,13 +2,25 @@ from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
 import time
 
-es = Elasticsearch(
-    "http://localhost:9200",
-    headers={
-        "Accept": "application/vnd.elasticsearch+json; compatible-with=8",
-        "Content-Type": "application/vnd.elasticsearch+json; compatible-with=8"
-    }
-)
+# Retry connection until Elasticsearch is ready
+max_retries = 30
+for i in range(max_retries):
+    try:
+        es = Elasticsearch(
+            "http://localhost:9200",
+            headers={
+                "Accept": "application/vnd.elasticsearch+json; compatible-with=8",
+                "Content-Type": "application/vnd.elasticsearch+json; compatible-with=8"
+            }
+        )
+        es.ping()
+        break
+    except Exception:
+        if i < max_retries - 1:
+            print(f"Waiting for Elasticsearch... ({i+1}/{max_retries})")
+            time.sleep(2)
+        else:
+            raise
 INDEX = "test_texts"
 
 # Delete if exists

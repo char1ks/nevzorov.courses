@@ -27,9 +27,20 @@ def benchmark_search(cur):
     return total / 100
 
 def main():
-    conn = psycopg2.connect(
-        dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST, port=DB_PORT
-    )
+    # Retry connection until DB is ready
+    max_retries = 30
+    for i in range(max_retries):
+        try:
+            conn = psycopg2.connect(
+                dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST, port=DB_PORT
+            )
+            break
+        except psycopg2.OperationalError:
+            if i < max_retries - 1:
+                print(f"Waiting for database... ({i+1}/{max_retries})")
+                time.sleep(2)
+            else:
+                raise
     cur = conn.cursor()
 
     # With index

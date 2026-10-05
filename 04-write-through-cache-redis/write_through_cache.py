@@ -78,11 +78,34 @@ def cache_lookup_test(cur, r, key_range, label):
     )
 
 def main():
-    conn = psycopg2.connect(
-        dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST, port=DB_PORT
-    )
+    # Retry connection until DB is ready
+    max_retries = 30
+    for i in range(max_retries):
+        try:
+            conn = psycopg2.connect(
+                dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST, port=DB_PORT
+            )
+            break
+        except psycopg2.OperationalError:
+            if i < max_retries - 1:
+                print(f"Waiting for database... ({i+1}/{max_retries})")
+                time.sleep(2)
+            else:
+                raise
     cur = conn.cursor()
-    r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+    
+    # Retry connection until Redis is ready
+    for i in range(max_retries):
+        try:
+            r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+            r.ping()
+            break
+        except redis.ConnectionError:
+            if i < max_retries - 1:
+                print(f"Waiting for Redis... ({i+1}/{max_retries})")
+                time.sleep(2)
+            else:
+                raise
 
     setup_db(cur, conn)
     insert_postgres_only(cur, conn)
