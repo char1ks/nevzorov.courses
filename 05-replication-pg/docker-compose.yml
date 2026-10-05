@@ -1,6 +1,6 @@
 services:
   postgresql-master:
-    image: docker.io/bitnami/postgresql:18
+    image: docker.io/bitnami/postgresql:latest
     ports:
       - '5432:5432'
     volumes:
@@ -18,9 +18,11 @@ services:
       interval: 2s
       timeout: 2s
       retries: 30
+    networks:
+      - postgres-network
 
   postgresql-slave:
-    image: docker.io/bitnami/postgresql:18
+    image: docker.io/bitnami/postgresql:latest
     ports:
       - '5433:5432'
     depends_on:
@@ -38,6 +40,12 @@ services:
       interval: 2s
       timeout: 2s
       retries: 30
+    networks:
+      - postgres-network
+
+networks:
+  postgres-network:
+    driver: bridge
 
 volumes:
   postgresql_master_data:
