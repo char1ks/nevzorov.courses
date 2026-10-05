@@ -19,10 +19,12 @@ docker compose up -d
 
 ## Как проверить репликацию
 
-### Подключение к Master
+### Вариант 1: Через docker exec (рекомендуется, не требует установки psql)
+
+#### Подключение к Master
 
 ```bash
-PGPASSWORD= psql -h 127.0.0.1 -p 5432 -U postgres -d my_database
+docker exec -it 05-replication-pg-postgresql-master-1 psql -U postgres -d my_database
 ```
 
 Внутри psql выполните:
@@ -40,7 +42,33 @@ INSERT INTO test_replication (data) VALUES ('test data 1'), ('test data 2');
 SELECT pid, client_addr, state, sync_state, sent_lsn, write_lsn, flush_lsn, replay_lsn FROM pg_stat_replication;
 ```
 
-### Подключение к Slave
+#### Подключение к Slave
+
+```bash
+docker exec -it 05-replication-pg-postgresql-slave-1 psql -U postgres -d my_database
+```
+
+### Вариант 2: Через локальный psql (требует установки)
+
+#### Установка psql
+
+**macOS:**
+```bash
+brew install postgresql
+```
+
+**Ubuntu/Debian:**
+```bash
+sudo apt-get install postgresql-client
+```
+
+#### Подключение к Master
+
+```bash
+PGPASSWORD= psql -h 127.0.0.1 -p 5432 -U postgres -d my_database
+```
+
+#### Подключение к Slave
 
 ```bash
 PGPASSWORD= psql -h 127.0.0.1 -p 5433 -U postgres -d my_database
