@@ -2,6 +2,7 @@
 set -e
 pip install -r requirements.txt
 docker compose up -d
-sleep 5
+echo "Waiting for services to be ready..."
+docker compose wait db redis
 python write_through_cache.py
 docker compose down 

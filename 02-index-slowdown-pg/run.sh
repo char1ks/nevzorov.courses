@@ -2,6 +2,7 @@
 set -e
 pip install -r requirements.txt
 docker compose up -d
-sleep 5
+echo "Waiting for database to be ready..."
+docker compose wait db
 python index_slowdown.py
 docker compose down 
