@@ -27,6 +27,8 @@ docker compose up -d
 docker exec -it 05-replication-pg-postgresql-master-1 psql -U postgres -d my_database
 ```
 
+Пароль: `mysecretpassword`
+
 Внутри psql выполните:
 ```sql
 -- Проверить, что это master (выводит false)
@@ -48,6 +50,8 @@ SELECT pid, client_addr, state, sync_state, sent_lsn, write_lsn, flush_lsn, repl
 docker exec -it 05-replication-pg-postgresql-slave-1 psql -U postgres -d my_database
 ```
 
+Пароль: `mysecretpassword`
+
 ### Вариант 2: Через локальный psql (требует установки)
 
 #### Установка psql
@@ -65,13 +69,13 @@ sudo apt-get install postgresql-client
 #### Подключение к Master
 
 ```bash
-PGPASSWORD= psql -h 127.0.0.1 -p 5432 -U postgres -d my_database
+PGPASSWORD=mysecretpassword psql -h 127.0.0.1 -p 5432 -U postgres -d my_database
 ```
 
 #### Подключение к Slave
 
 ```bash
-PGPASSWORD= psql -h 127.0.0.1 -p 5433 -U postgres -d my_database
+PGPASSWORD=mysecretpassword psql -h 127.0.0.1 -p 5433 -U postgres -d my_database
 ```
 
 Внутри psql выполните:
